@@ -2,6 +2,7 @@ import { resolveAgentRunAbortLifecycleFields } from "../../agents/run-terminatio
 import { racePromiseWithAbortSignal } from "../../infra/abort-signal.js";
 import type { HeartbeatRunResult } from "../../infra/heartbeat-wake.js";
 import { isCronActiveJobMarkerCurrent } from "../active-jobs.js";
+import { resolveCronJobAdmissionSource } from "../admission-source.js";
 import { resolveCronJobEffectiveAgentId } from "../agent-id.js";
 import { isHeartbeatTaskCronJob } from "../heartbeat-task.js";
 import { createCronRunDiagnosticsFromError } from "../run-diagnostics.js";
@@ -433,15 +434,7 @@ async function executeDetachedCronJob(
   const res = await state.deps.runIsolatedAgentJob({
     deliveryAttemptFence: options?.deliveryAttemptFence ?? null,
     job,
-    admissionSource:
-      job.owner?.sessionKey ||
-      job.owner?.accountId ||
-      job.scheduledToolPolicy?.mode === "account" ||
-      job.payload.externalContentSource ||
-      job.toolsAllowProvenance?.channelRequester ||
-      (job.toolsAllowProvenance && job.toolsAllowProvenance.callerOrigin?.kind !== "local")
-        ? "requester-schedule"
-        : "operator-schedule",
+    admissionSource: resolveCronJobAdmissionSource(job),
     message: job.payload.message,
     abortSignal,
     onExecutionStarted: options?.onExecutionStarted,
