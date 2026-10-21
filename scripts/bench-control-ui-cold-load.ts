@@ -17,6 +17,7 @@ import { isChatHistoryState } from "../ui/src/lib/protocol-validators.generated/
 import { createColdLoadProbeInitScript } from "../ui/src/test-helpers/control-ui-cold-load-probes.ts";
 import {
   createControlUiMockBootstrapConfig,
+  installControlUiMockBootstrapDocument,
   createControlUiMockGatewayInitScript,
   controlUiSessionPath,
   controlUiSessionUrl,
@@ -568,6 +569,10 @@ try {
   });
   await page.route("**/control-ui-config.json", (route) =>
     route.fulfill({ json: createControlUiMockBootstrapConfig(prepared.scenario) }),
+  );
+  await installControlUiMockBootstrapDocument(
+    page,
+    createControlUiMockBootstrapConfig(prepared.scenario),
   );
   const assets = new Map<string, { body: string | Buffer; contentType: string }>([
     ...fixture.assets,
