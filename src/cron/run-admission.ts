@@ -31,6 +31,7 @@ import {
   captureCronJobStandingGrantAuthority,
 } from "./active-jobs.js";
 import type { CronCompletionDeliveryFence } from "./delivery-attempt-fence.js";
+import type { MintedScheduledExecution } from "./execution-context-admission.js";
 import type { CronExecutionIdentityAdmission } from "./service/state.js";
 
 /** Owns one cron tool admission and its private message grant through settlement. */
@@ -50,6 +51,8 @@ export function prepareCronRunAdmission(params: {
   operatorAuthority?: AdmittedRunOperatorAuthority;
   ingressBoundary?: "cron.isolated-agent" | "cron.script";
   resolveGatewayContext?: GatewayContextResolver;
+  /** Minted per occurrence; bound to the admitted run and released with it. */
+  scheduledExecution?: MintedScheduledExecution;
 }) {
   const { runId, scheduledToolPolicy } = params;
   const operationalRunInstance = createOperationalRunInstanceRef(runId);
@@ -80,6 +83,9 @@ export function prepareCronRunAdmission(params: {
     onAdmitted: (admitted) => {
       bindGatewayContextResolver(admitted, resolveGatewayContext);
       assertAdmitted = resolveAdmittedRunActiveAssertion(admitted);
+      params.scheduledExecution?.bind(admitted.operationalRunInstance, () =>
+        readAdmittedSource()(),
+      );
     },
   });
   const preparedRunAdmission = params.executionIdentity?.onPostAdmission
@@ -97,6 +103,7 @@ export function prepareCronRunAdmission(params: {
     : undefined;
   const deliveryAttemptFence = params.deliveryAttemptFence;
   if (scheduledMessageAuthority && !deliveryAttemptFence) {
+    params.scheduledExecution?.release();
     preparedRunAdmission.close();
     throw new Error("scheduled message authority requires its occurrence delivery fence");
   }
@@ -137,6 +144,7 @@ export function prepareCronRunAdmission(params: {
       })
     : undefined;
   const close = () => {
+    params.scheduledExecution?.release();
     revokeMessageActionTurnCapability(messageActionTurnCapability);
     preparedRunAdmission.close();
   };
