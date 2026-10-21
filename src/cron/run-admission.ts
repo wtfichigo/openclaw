@@ -83,7 +83,9 @@ export function prepareCronRunAdmission(params: {
     onAdmitted: (admitted) => {
       bindGatewayContextResolver(admitted, resolveGatewayContext);
       assertAdmitted = resolveAdmittedRunActiveAssertion(admitted);
-      params.scheduledExecution?.bind(() => readAdmittedSource()());
+      params.scheduledExecution?.bind(admitted.operationalRunInstance, () =>
+        readAdmittedSource()(),
+      );
     },
   });
   const preparedRunAdmission = params.executionIdentity?.onPostAdmission
