@@ -468,6 +468,7 @@ async function executeDetachedCronJob(
     sessionKey: res.sessionKey,
     diagnostics: res.diagnostics,
     failureNotificationDetail: res.failureNotificationDetail,
+    parentUnavailable: res.parentUnavailable,
     model: res.model,
     provider: res.provider,
     usage: res.usage,
